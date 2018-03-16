@@ -1,0 +1,6 @@
+rootProject.name = 'dpi-core'
+
+include (':library')
+include (':bank')
+include (':broker')
+include (':client')
