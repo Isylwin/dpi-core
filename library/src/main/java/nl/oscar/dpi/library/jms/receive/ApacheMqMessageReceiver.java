@@ -23,14 +23,14 @@ public class ApacheMqMessageReceiver {
         this.listener = listener;
     }
 
-    public void start(String queueName) {
+    public void start() {
         if (Objects.nonNull(listener)) {
             isShutdown = false;
 
             executors.execute(() -> {
                 while (!isShutdown) {
                     try {
-                        Message message = receiver.receiveMessage(queueName);
+                        Message message = receiver.receiveMessage();
                         System.out.println("Received message " + message.toString());
                         listener.receiveMessage(message);
                     } catch (JMSException e) {

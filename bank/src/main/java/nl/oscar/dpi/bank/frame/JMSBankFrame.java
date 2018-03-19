@@ -1,10 +1,7 @@
 package nl.oscar.dpi.bank.frame;
 
-import nl.oscar.dpi.library.QueueNames;
-import nl.oscar.dpi.library.jms.receive.ApacheMqMessageReceiver;
-import nl.oscar.dpi.library.jms.receive.MessageReceiver;
+import nl.oscar.dpi.bank.frame.jms.BankToBrokerGateway;
 import nl.oscar.dpi.library.jms.receive.impl.ObjectMessageListener;
-import nl.oscar.dpi.library.jms.send.MessageSender;
 import nl.oscar.dpi.library.model.RequestReply;
 import nl.oscar.dpi.library.model.bank.BankInterestReply;
 import nl.oscar.dpi.library.model.bank.BankInterestRequest;
@@ -29,8 +26,10 @@ public class JMSBankFrame extends JFrame {
 
 	private Map<BankInterestRequest, String> origins = new HashMap<>();
 
-	private MessageSender sender = new MessageSender(QueueNames.INTEREST_REPLY);
-	private ApacheMqMessageReceiver receiver = new ApacheMqMessageReceiver(new MessageReceiver());
+    private BankToBrokerGateway gateway = new BankToBrokerGateway();
+
+    //private MessageSender sender = new MessageSender(QueueNames.INTEREST_REPLY);
+    //private ApacheMqMessageReceiver receiver = new ApacheMqMessageReceiver(new MessageReceiver());
 
 	/**
 	 * Create the frame.
@@ -88,11 +87,7 @@ public class JMSBankFrame extends JFrame {
 				rr.setReply(reply);
 				list.repaint();
 
-				try {
-					sender.sendObjectMessage(reply, origins.get(rr.getRequest()));
-				} catch (JMSException e1) {
-					System.out.println(e1.getMessage());
-				}
+                gateway.send(reply, origins.get(rr.getRequest()));
 			}
 		});
 
@@ -121,7 +116,7 @@ public class JMSBankFrame extends JFrame {
 	}
 
 	private void initReceiver() {
-		receiver.setListener(new ObjectMessageListener<BankInterestRequest>() {
+        gateway.setListener(new ObjectMessageListener<BankInterestRequest>() {
 			@Override
 			protected void receivedObjectMessage(BankInterestRequest object, ObjectMessage message) {
 				try {
@@ -132,8 +127,6 @@ public class JMSBankFrame extends JFrame {
 				}
 			}
 		});
-
-		receiver.start(QueueNames.INTEREST_REQUEST);
 	}
 
 }

@@ -1,10 +1,8 @@
 package nl.oscar.dpi.broker.frame;
 
-import nl.oscar.dpi.library.QueueNames;
-import nl.oscar.dpi.library.jms.receive.ApacheMqMessageReceiver;
-import nl.oscar.dpi.library.jms.receive.MessageReceiver;
+import nl.oscar.dpi.broker.jms.BrokerToBankGateway;
+import nl.oscar.dpi.broker.jms.BrokerToClientGateway;
 import nl.oscar.dpi.library.jms.receive.impl.ObjectMessageListener;
-import nl.oscar.dpi.library.jms.send.MessageSender;
 import nl.oscar.dpi.library.model.bank.BankInterestReply;
 import nl.oscar.dpi.library.model.bank.BankInterestRequest;
 import nl.oscar.dpi.library.model.loan.LoanReply;
@@ -27,11 +25,14 @@ public class LoanBrokerFrame extends JFrame {
     private DefaultListModel<JListLine> listModel = new DefaultListModel<JListLine>();
     private JList<JListLine> list;
 
-    private ApacheMqMessageReceiver loanReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
-    private ApacheMqMessageReceiver interestReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
+    private BrokerToBankGateway bankGateway = new BrokerToBankGateway();
+    private BrokerToClientGateway clientGateway = new BrokerToClientGateway();
 
-    private MessageSender interestSender = new MessageSender(QueueNames.INTEREST_REQUEST);
-    private MessageSender loanSender = new MessageSender(QueueNames.LOAN_REPLY);
+    //private ApacheMqMessageReceiver loanReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
+    //private ApacheMqMessageReceiver interestReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
+
+    //private MessageSender interestSender = new MessageSender(QueueNames.INTEREST_REQUEST);
+    //private MessageSender loanSender = new MessageSender(QueueNames.LOAN_REPLY);
 
     /**
      * Create the frame.
@@ -77,7 +78,8 @@ public class LoanBrokerFrame extends JFrame {
     }
 
     public void initListener() {
-        loanReceiver.setListener(new ObjectMessageListener<LoanRequest>() {
+
+        clientGateway.setListener(new ObjectMessageListener<LoanRequest>() {
             @Override
             protected void receivedObjectMessage(LoanRequest object, ObjectMessage message) {
                 try {
@@ -86,15 +88,14 @@ public class LoanBrokerFrame extends JFrame {
                         add(object);
                         add(object, request);
                     });
-                    interestSender.sendObjectMessage(request, message.getJMSCorrelationID());
+                    bankGateway.send(request, message.getJMSCorrelationID());
                 } catch (JMSException e) {
                     System.out.println(e.getMessage());
                 }
-
             }
         });
 
-        interestReceiver.setListener(new ObjectMessageListener<BankInterestReply>() {
+        bankGateway.setListener(new ObjectMessageListener<BankInterestReply>() {
             @Override
             protected void receivedObjectMessage(BankInterestReply object, ObjectMessage message) {
                 try {
@@ -106,15 +107,12 @@ public class LoanBrokerFrame extends JFrame {
                             System.out.println(e.getMessage());
                         }
                     });
-                    loanSender.sendObjectMessage(reply, message.getJMSCorrelationID());
+                    clientGateway.send(reply, message.getJMSCorrelationID());
                 } catch (JMSException e) {
                     System.out.println(e.getMessage());
                 }
             }
         });
-
-        loanReceiver.start(QueueNames.LOAN_REQUEST);
-        interestReceiver.start(QueueNames.INTEREST_REPLY);
     }
 
     private JListLine getRequestReply(LoanRequest request) {

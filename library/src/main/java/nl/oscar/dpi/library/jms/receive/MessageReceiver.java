@@ -10,18 +10,24 @@ public class MessageReceiver {
 
     //URL of the JMS server. DEFAULT_BROKER_URL will just mean that JMS server is on localhost
     private String url;
+    private String queueName;
 
     private Session session;
     private Connection connection;
     private Destination destination;
     private MessageConsumer consumer;
 
-    public MessageReceiver(String url) {
+    public MessageReceiver(String queueName, String url) {
+        this.queueName = queueName;
         this.url = url;
     }
 
     public MessageReceiver() {
         this(ActiveMQConnection.DEFAULT_BROKER_URL);
+    }
+
+    public MessageReceiver(String queueName) {
+        this(queueName, ActiveMQConnection.DEFAULT_BROKER_URL);
     }
 
     public void start(String queueName) throws JMSException {
@@ -40,8 +46,12 @@ public class MessageReceiver {
     }
 
     public void stop() throws JMSException {
-        session.close();
-        connection.close();
+        if (Objects.nonNull(session)) {
+            session.close();
+        }
+        if (Objects.nonNull(connection)) {
+            connection.close();
+        }
 
         consumer = null;
         destination = null;
@@ -49,7 +59,7 @@ public class MessageReceiver {
         connection = null;
     }
 
-    public Message receiveMessage(String queueName) throws JMSException {
+    public Message receiveMessage() throws JMSException {
         if (Objects.isNull(connection) || Objects.isNull(session)) {
             start(queueName);
         }

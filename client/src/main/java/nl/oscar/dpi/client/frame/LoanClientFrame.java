@@ -1,15 +1,11 @@
 package nl.oscar.dpi.client.frame;
 
-import nl.oscar.dpi.library.QueueNames;
-import nl.oscar.dpi.library.jms.receive.ApacheMqMessageReceiver;
-import nl.oscar.dpi.library.jms.receive.MessageReceiver;
+import nl.oscar.dpi.client.jms.ClientToBrokerGateway;
 import nl.oscar.dpi.library.jms.receive.impl.ObjectMessageListener;
-import nl.oscar.dpi.library.jms.send.MessageSender;
 import nl.oscar.dpi.library.model.RequestReply;
 import nl.oscar.dpi.library.model.loan.LoanReply;
 import nl.oscar.dpi.library.model.loan.LoanRequest;
 
-import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -31,8 +27,7 @@ public class LoanClientFrame extends JFrame {
     private JLabel lblNewLabel_1;
     private JTextField tfTime;
 
-    private MessageSender sender = new MessageSender(QueueNames.LOAN_REQUEST);
-    private ApacheMqMessageReceiver receiver = new ApacheMqMessageReceiver(new MessageReceiver());
+    private ClientToBrokerGateway gateway = new ClientToBrokerGateway();
 
     /**
      * Create the frame.
@@ -112,11 +107,7 @@ public class LoanClientFrame extends JFrame {
             LoanRequest request = new LoanRequest(ssn, amount, time);
             listModel.addElement(new RequestReply<>(request, null));
 
-            try {
-                sender.sendObjectMessage(request, request.getUuid().toString());
-            } catch (JMSException e) {
-                System.out.println(e.getMessage());
-            }
+            gateway.send(request, request.getUuid().toString());
         });
         GridBagConstraints gbc_btnQueue = new GridBagConstraints();
         gbc_btnQueue.insets = new Insets(0, 0, 5, 5);
@@ -182,7 +173,7 @@ public class LoanClientFrame extends JFrame {
     }
 
     private void initReceiver() {
-        receiver.setListener(new ObjectMessageListener<LoanReply>() {
+        gateway.setListener(new ObjectMessageListener<LoanReply>() {
             @Override
             protected void receivedObjectMessage(LoanReply object, ObjectMessage message) {
                 try {
@@ -194,6 +185,5 @@ public class LoanClientFrame extends JFrame {
                 }
             }
         });
-        receiver.start(QueueNames.LOAN_REPLY);
     }
 }
