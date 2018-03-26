@@ -53,18 +53,22 @@ public class MessageSender {
     }
 
     public <T extends Serializable> void sendObjectMessage(T object) throws JMSException {
-        sendObjectMessage(object, destination, null);
+        sendObjectMessage(object, destination, null, null);
+    }
+
+    public <T extends Serializable> void sendObjectMessage(T object, int aggId) throws JMSException {
+        sendObjectMessage(object, destination, null, aggId);
     }
 
     public <T extends Serializable> void sendObjectMessage(T object, String corrId) throws JMSException {
-        sendObjectMessage(object, destination, corrId);
+        sendObjectMessage(object, destination, corrId, null);
     }
 
     public <T extends Serializable> void sendObjectMessage(T object, Destination destination) throws JMSException {
-        sendObjectMessage(object, destination, null);
+        sendObjectMessage(object, destination, null, null);
     }
 
-    public <T extends Serializable> void sendObjectMessage(@NotNull T object, @NotNull Destination destination, String corrId) throws JMSException {
+    public <T extends Serializable> void sendObjectMessage(@NotNull T object, @NotNull Destination destination, String corrId, Integer aggId) throws JMSException {
         if (Objects.isNull(connection) || Objects.isNull(session)) {
             start();
             destination = this.destination;

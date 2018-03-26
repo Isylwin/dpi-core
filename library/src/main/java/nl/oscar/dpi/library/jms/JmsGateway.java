@@ -22,6 +22,8 @@ public abstract class JmsGateway<S extends Serializable, R> {
             e.printStackTrace();
         }
 
+        System.out.println("Listening to " + receiveQueueName);
+        System.out.println("Sending to " + sendQueueName);
     }
 
     public void send(S object) {
@@ -40,9 +42,8 @@ public abstract class JmsGateway<S extends Serializable, R> {
         }
     }
 
-    public void setListener(ObjectMessageListener<R> listener) {
-        receiver.setListener(listener);
+    public void addListener(ObjectMessageListener<R> listener) {
+        receiver.addListeners(listener);
         receiver.start();
     }
-
 }

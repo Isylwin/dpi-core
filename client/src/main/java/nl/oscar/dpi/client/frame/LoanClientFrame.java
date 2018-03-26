@@ -173,7 +173,7 @@ public class LoanClientFrame extends JFrame {
     }
 
     private void initReceiver() {
-        gateway.setListener(new ObjectMessageListener<LoanReply>() {
+        gateway.addListener(new ObjectMessageListener<LoanReply>() {
             @Override
             protected void receivedObjectMessage(LoanReply object, ObjectMessage message) {
                 try {

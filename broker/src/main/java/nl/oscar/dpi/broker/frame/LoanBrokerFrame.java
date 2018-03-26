@@ -1,6 +1,6 @@
 package nl.oscar.dpi.broker.frame;
 
-import nl.oscar.dpi.broker.jms.BrokerToBankGateway;
+import nl.oscar.dpi.broker.jms.BrokerToBankScatterGather;
 import nl.oscar.dpi.broker.jms.BrokerToClientGateway;
 import nl.oscar.dpi.library.jms.receive.impl.ObjectMessageListener;
 import nl.oscar.dpi.library.model.bank.BankInterestReply;
@@ -25,14 +25,8 @@ public class LoanBrokerFrame extends JFrame {
     private DefaultListModel<JListLine> listModel = new DefaultListModel<JListLine>();
     private JList<JListLine> list;
 
-    private BrokerToBankGateway bankGateway = new BrokerToBankGateway();
+    private BrokerToBankScatterGather brokerGateway = new BrokerToBankScatterGather();
     private BrokerToClientGateway clientGateway = new BrokerToClientGateway();
-
-    //private ApacheMqMessageReceiver loanReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
-    //private ApacheMqMessageReceiver interestReceiver = new ApacheMqMessageReceiver(new MessageReceiver());
-
-    //private MessageSender interestSender = new MessageSender(QueueNames.INTEREST_REQUEST);
-    //private MessageSender loanSender = new MessageSender(QueueNames.LOAN_REPLY);
 
     /**
      * Create the frame.
@@ -79,7 +73,7 @@ public class LoanBrokerFrame extends JFrame {
 
     public void initListener() {
 
-        clientGateway.setListener(new ObjectMessageListener<LoanRequest>() {
+        clientGateway.addListener(new ObjectMessageListener<LoanRequest>() {
             @Override
             protected void receivedObjectMessage(LoanRequest object, ObjectMessage message) {
                 try {
@@ -88,14 +82,14 @@ public class LoanBrokerFrame extends JFrame {
                         add(object);
                         add(object, request);
                     });
-                    bankGateway.send(request, message.getJMSCorrelationID());
+                    brokerGateway.send(request, message.getJMSCorrelationID());
                 } catch (JMSException e) {
                     System.out.println(e.getMessage());
                 }
             }
         });
 
-        bankGateway.setListener(new ObjectMessageListener<BankInterestReply>() {
+        brokerGateway.setListener(new ObjectMessageListener<BankInterestReply>() {
             @Override
             protected void receivedObjectMessage(BankInterestReply object, ObjectMessage message) {
                 try {

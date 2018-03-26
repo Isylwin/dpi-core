@@ -2,6 +2,7 @@ package nl.oscar.dpi.bank.frame;
 
 import nl.oscar.dpi.bank.frame.jms.BankToBrokerGateway;
 import nl.oscar.dpi.library.jms.receive.impl.ObjectMessageListener;
+import nl.oscar.dpi.library.model.BankName;
 import nl.oscar.dpi.library.model.RequestReply;
 import nl.oscar.dpi.library.model.bank.BankInterestReply;
 import nl.oscar.dpi.library.model.bank.BankInterestRequest;
@@ -16,17 +17,22 @@ import java.util.Map;
 
 public class JMSBankFrame extends JFrame {
 
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 1L;
+
+	private static Map<Integer, String> bankNames = new HashMap<Integer, String>() {{
+		put(0, "ABN AMRO");
+		put(1, "ING");
+		put(2, "RABOBANK");
+	}};
+
+	private int number;
 	private JPanel contentPane;
 	private JTextField tfReply;
 	private DefaultListModel<RequestReply<BankInterestRequest, BankInterestReply>> listModel = new DefaultListModel<>();
 
 	private Map<BankInterestRequest, String> origins = new HashMap<>();
 
-    private BankToBrokerGateway gateway = new BankToBrokerGateway();
+	private BankToBrokerGateway gateway;
 
     //private MessageSender sender = new MessageSender(QueueNames.INTEREST_REPLY);
     //private ApacheMqMessageReceiver receiver = new ApacheMqMessageReceiver(new MessageReceiver());
@@ -34,8 +40,12 @@ public class JMSBankFrame extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public JMSBankFrame() {
-		setTitle("JMS Bank - ABN AMRO");
+	public JMSBankFrame(int i) {
+		this.number = i;
+
+		this.gateway = new BankToBrokerGateway(BankName.fromOrdinal(number));
+
+		setTitle("JMS Bank - " + bankNames.get(number));
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
@@ -83,7 +93,7 @@ public class JMSBankFrame extends JFrame {
 			RequestReply<BankInterestRequest, BankInterestReply> rr = list.getSelectedValue();
 			if (rr != null) {
 				double interest = Double.parseDouble((tfReply.getText()));
-				BankInterestReply reply = new BankInterestReply(interest, "ABN AMRO");
+				BankInterestReply reply = new BankInterestReply(interest, bankNames.get(number));
 				rr.setReply(reply);
 				list.repaint();
 
@@ -105,9 +115,11 @@ public class JMSBankFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					JMSBankFrame frame = new JMSBankFrame();
-					frame.initReceiver();
-					frame.setVisible(true);
+					for (int i = 0; i < BankName.values().length; i++) {
+						JMSBankFrame frame = new JMSBankFrame(i);
+						frame.initReceiver();
+						frame.setVisible(true);
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -116,7 +128,7 @@ public class JMSBankFrame extends JFrame {
 	}
 
 	private void initReceiver() {
-        gateway.setListener(new ObjectMessageListener<BankInterestRequest>() {
+		gateway.addListener(new ObjectMessageListener<BankInterestRequest>() {
 			@Override
 			protected void receivedObjectMessage(BankInterestRequest object, ObjectMessage message) {
 				try {

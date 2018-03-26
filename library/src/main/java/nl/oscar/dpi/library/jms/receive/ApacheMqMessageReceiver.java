@@ -2,29 +2,32 @@ package nl.oscar.dpi.library.jms.receive;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ApacheMqMessageReceiver {
 
-    private MessageListener listener;
+    private Collection<MessageListener> listeners;
     private ExecutorService executors;
     private MessageReceiver receiver;
 
     private boolean isShutdown;
 
     public ApacheMqMessageReceiver(MessageReceiver receiver) {
+        this.listeners = new ArrayList<>();
         this.executors = Executors.newSingleThreadExecutor();
         this.receiver = receiver;
     }
 
-    public void setListener(MessageListener listener) {
-        this.listener = listener;
+    public void addListeners(MessageListener listeners) {
+        this.listeners.add(listeners);
     }
 
     public void start() {
-        if (Objects.nonNull(listener)) {
+        if (Objects.nonNull(listeners)) {
             isShutdown = false;
 
             executors.execute(() -> {
@@ -32,7 +35,7 @@ public class ApacheMqMessageReceiver {
                     try {
                         Message message = receiver.receiveMessage();
                         System.out.println("Received message " + message.toString());
-                        listener.receiveMessage(message);
+                        listeners.forEach(e -> e.receiveMessage(message));
                     } catch (JMSException e) {
                         System.out.println(e.getMessage());
                     }
